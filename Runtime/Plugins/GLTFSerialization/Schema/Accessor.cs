@@ -738,7 +738,7 @@ namespace GLTF.Schema
 				return contents.AsFloat2s;
 			}
 
-			if (Type != GLTFAccessorAttributeType.VEC2)
+			if (Type != GLTFAccessorAttributeType.VEC2 && Type != GLTFAccessorAttributeType.VEC3 && Type != GLTFAccessorAttributeType.VEC4)
 			{
 				return null;
 			}
@@ -754,7 +754,8 @@ namespace GLTF.Schema
 			GetTypeDetails(ComponentType, out uint componentSize, out float maxValue);
 			var bufferPointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<byte>(bufferViewData);
 
-			uint stride = BufferView.Value.ByteStride > 0 ? BufferView.Value.ByteStride : componentSize * 2;
+			uint typeBasedStride = Type == GLTFAccessorAttributeType.VEC2 ? (uint) 2 : Type == GLTFAccessorAttributeType.VEC3 ? (uint) 3 : (uint) 4;
+			uint stride = BufferView.Value.ByteStride > 0 ? BufferView.Value.ByteStride : componentSize * typeBasedStride;
 			if (!normalizeIntValues) maxValue = 1;
 
 			if (ComponentType == GLTFComponentType.Float)
@@ -1388,6 +1389,32 @@ namespace GLTF.Schema
 		MAT2,
 		MAT3,
 		MAT4
+	}
+
+	public static class GLTFAccessorAttributeTypeExtensions
+	{
+		public static int ComponentCount(this GLTFAccessorAttributeType attrType)
+		{
+			switch (attrType)
+			{
+				case GLTFAccessorAttributeType.SCALAR:
+					return 1;
+				case GLTFAccessorAttributeType.VEC2:
+					return 2;
+				case GLTFAccessorAttributeType.VEC3:
+					return 3;
+				case GLTFAccessorAttributeType.VEC4:
+					return 4;
+				case GLTFAccessorAttributeType.MAT2:
+					return 4;
+				case GLTFAccessorAttributeType.MAT3:
+					return 9;
+				case GLTFAccessorAttributeType.MAT4:
+					return 16;
+			}
+
+			return 0;
+		}
 	}
 
     /// <summary>

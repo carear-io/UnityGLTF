@@ -365,6 +365,7 @@ namespace UnityGLTF
 		private BufferId _bufferId;
 		private GLTFBuffer _buffer;
 		private List<ImageInfo> _imageInfos;
+		private HashSet<string> _imageExportPaths;
 		private List<FileInfo> _fileInfos;
 		private HashSet<string> _fileNames;
 		private List<UniqueTexture> _textures;
@@ -604,7 +605,8 @@ namespace UnityGLTF
 			var normalChannelShader = Resources.Load("NormalChannel", typeof(Shader)) as Shader;
 			_normalChannelMaterial = new Material(normalChannelShader);
 
-			_rootTransforms = rootTransforms;
+			// Remove invalid transforms
+			_rootTransforms = rootTransforms?.Where(x => x).ToArray() ?? Array.Empty<Transform>();
 
 			_exportedTransforms = new Dictionary<int, int>();
 			_exportedCameras = new Dictionary<int, int>();
@@ -640,6 +642,7 @@ namespace UnityGLTF
 			_fileNames = new HashSet<string>();
 			_exportedMaterials = new Dictionary<int, int>();
 			_textures = new List<UniqueTexture>();
+			_imageExportPaths = new HashSet<string>();
 
 			_buffer = new GLTFBuffer();
 			_bufferId = new BufferId
@@ -913,6 +916,8 @@ namespace UnityGLTF
 		/// </remarks>
 		private static string EnsureValidFileName(string filename)
 		{
+			if (filename == null) return "";
+			
 			var invalidChars = Regex.Escape(new string(Path.GetInvalidFileNameChars()));
 			var invalidReStr = string.Format(@"[{0}]+", invalidChars);
 
@@ -972,6 +977,8 @@ namespace UnityGLTF
 
 		private SceneId ExportScene(string name, Transform[] rootObjTransforms)
 		{
+			if (rootObjTransforms == null || rootObjTransforms.Length < 1) return null;
+			
 			exportSceneMarker.Begin();
 
 			var scene = new GLTFScene();
@@ -997,6 +1004,11 @@ namespace UnityGLTF
 			scene.Nodes = new List<NodeId>(rootObjTransforms.Length);
 			foreach (var transform in rootObjTransforms)
 			{
+				if (!transform)
+				{
+					Debug.LogWarning("GLTFSceneExporter", $"Skipping empty transform in root transforms provided for scene export for {name}", transform);
+					continue;
+				}
 				scene.Nodes.Add(ExportNode(transform));
 			}
 

@@ -51,6 +51,11 @@ float3 Sample4Tap(float2 uv, float lod)
 
 void SampleSceneColor_float(float2 uv, float lod, out float3 color)
 {
+	#if !UNITY_UV_STARTS_AT_TOP
+	if (_CameraOpaqueTexture_TexelSize.y > 0)
+		uv.y = 1-uv.y;
+	#endif
+	
 	#define REQUIRE_OPAQUE_TEXTURE // seems we need to define this ourselves? HDSceneColorNode does that as well
 
 #if defined(USE_CAMERA_OPAQUE)
@@ -116,18 +121,22 @@ void Spectral_float(float wavelength, out half3 color)
 void WorkaroundTilingOffset_float(UnityTexture2D Tex, float4 LegacyST, out float4 TilingOffset, out UnityTexture2D OutTex)
 {
 	#if UNITY_VERSION >= 202120
+	TilingOffset = Tex.scaleTranslate;
 	Tex.scaleTranslate = float4(1,1,0,0);
-	#endif
+	#else
 	TilingOffset = LegacyST;
+	#endif
 	OutTex = Tex;
 }
 
 void WorkaroundTilingOffset_half(UnityTexture2D Tex, half4 LegacyST, out half4 TilingOffset, out UnityTexture2D OutTex)
 {
 	#if UNITY_VERSION >= 202120
+	TilingOffset = Tex.scaleTranslate;
 	Tex.scaleTranslate = half4(1,1,0,0);
-	#endif
+	#else
 	TilingOffset = LegacyST;
+	#endif
 	OutTex = Tex;
 }
 
